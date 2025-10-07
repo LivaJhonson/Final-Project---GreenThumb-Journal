@@ -1,0 +1,63 @@
+:root {
+    /* Color Palette (GreenThumb Identity) */
+    --forest-green: #38761D; 
+    --moss-green: #C9D86D;   
+    --bg-light: #F5F5F5;     
+    --text-dark: #333333;
+    --error-red: #C20E0E;
+}
+
+/* Global Typography */
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    margin: 0;
+    padding: 0;
+}
+
+h2 {
+    font-family: 'Montserrat', sans-serif;
+    color: var(--forest-green);
+    text-align: center;
+}
+
+/* Form Styles */
+.form-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+input[type="email"], input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0 15px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+button[type="submit"] {
+    width: 100%;
+    background-color: var(--forest-green);
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background-color 0.3s;
+}
+
+button[type="submit"]:hover {
+    background-color: #2e6017;
+}
+
+.form-message {
+    margin-top: 10px;
+    font-weight: bold;
+}
