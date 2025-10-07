@@ -5,7 +5,7 @@ import express from 'express';
 import serverless from 'serverless-http'; 
 import bcrypt from 'bcrypt'; 
 import 'dotenv/config'; 
-import { dbPromise } from '../../../server/database.js'; // NOTE: Adjusted Path!
+import { dbPromise } from './database.js'; 
 
 // We can remove the path imports for static files since Netlify handles them separately.
 // The DB logic remains the same.
