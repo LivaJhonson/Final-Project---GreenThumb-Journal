@@ -1,0 +1,21 @@
+[build]
+  # CRITICAL: This MUST match the name of your frontend folder.
+  publish = "client"
+  command = "echo 'No build step required'"
+
+[functions]
+  # CRITICAL: Path to your functions folder.
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# CRITICAL: Redirects all /api/ calls to your serverless function.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/server" 
+  status = 200
+
+# CRITICAL: Redirects the root URL to your login page.
+[[redirects]]
+  from = "/"
+  to = "/login.html"
+  status = 302
