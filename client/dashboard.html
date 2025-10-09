@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenThumb Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <header class="header">
+        <h1>Welcome to GreenThumb</h1>
+        <button id="logout-btn" class="btn btn-tertiary">Logout</button>
+    </header>
+
+    <main class="dashboard-main">
+        <button id="open-identify-modal-btn" class="btn btn-primary add-plant-btn">
+            <i class="fas fa-leaf"></i> Identify New Plant
+        </button>
+
+        <section id="my-plants-container" class="plant-cards-grid">
+            <h2>My Plant Collection</h2>
+            </section>
+    </main>
+
+    <div id="identify-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="close-modal-btn" class="close-btn">&times;</button>
+            <h3 class="modal-title">Identify Your Plant</h3>
+            <p class="modal-description">Upload a clear photo of the leaf or flower for the best results.</p>
+            
+            <form id="identify-form" class="plant-identify-form">
+                
+                <input type="file" id="plant-image-input" accept="image/*" style="display: none;">
+                
+                <button type="button" id="upload-button" class="btn btn-secondary">
+                    <i class="fas fa-camera"></i> Upload Photo
+                </button>
+
+                <div id="image-preview-container" class="image-preview-area hidden">
+                    <img id="image-preview" src="#" alt="Image Preview" class="preview-img">
+                </div>
+
+                <div id="feedback-area" class="feedback-area"></div>
+
+                <div class="modal-actions">
+                    <button type="submit" id="identify-submit-btn" class="btn btn-primary" disabled>
+                        Identify Plant
+                    </button>
+                    <button type="button" id="cancel-identify-btn" class="btn btn-tertiary">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+
+            <div id="identification-results" class="identification-results hidden">
+                </div>
+        </div>
+    </div>
+    <script src="js/identify-plant.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

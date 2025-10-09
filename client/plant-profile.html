@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="plant-page-title">Plant Profile</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="header">
+        <button onclick="window.location.href='dashboard.html'" class="btn btn-tertiary back-btn">
+            &larr; Back to Dashboard
+        </button>
+        <h1 id="plant-profile-name">Loading Plant Details...</h1>
+        <button id="delete-plant-top-btn" class="btn btn-danger">Delete Plant</button>
+    </header>
+
+    <main class="plant-profile-main">
+        <section id="plant-details-section" class="plant-details-container">
+            <p id="loading-message">Fetching plant data...</p>
+        </section>
+        
+        <section id="supplemental-data-section" class="supplemental-data-container hidden">
+            <h2>Supplemental Details (from Trefle)</h2>
+            <p id="supplemental-loading-message">Loading supplemental information...</p>
+        </section>
+    </main>
+
+    <script src="js/plant-profile.js"></script>
+</body>
+</html>
