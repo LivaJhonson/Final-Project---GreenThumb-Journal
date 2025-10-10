@@ -4,10 +4,10 @@ import express from 'express';
 // --- IMPORTANT: Use the 'netlify' adapter for Express ---
 import serverless from 'serverless-http'; 
 import bcrypt from 'bcrypt'; 
-import jwt from 'jsonwebtoken'; // <-- REQUIRED for Week 6 Login/Auth
-import fetch from 'node-fetch'; // <-- REQUIRED for external API calls (Plant.ID/Trefle)
+import jwt from 'jsonwebtoken';
+import fetch from 'node-fetch';
 import 'dotenv/config'; 
-import { dbPromise } from './database.js'; // Note: Adjust path if needed
+import { dbPromise } from './database.js';
 
 // --- Database Connection Setup ---
 let db;
@@ -15,31 +15,27 @@ let db;
 dbPromise.then(instance => {
     db = instance;
 }).catch(err => {
-    // Critical failure: Log the error. Netlify will handle the function crash.
     console.error("Critical: Database connection failed during server startup.", err);
 });
 
 const app = express();
 app.use(express.json()); 
 
-// --- Authentication Middleware (WEEK 6) ---
-// Function to verify JWT and attach user data to the request
+// --- Authentication Middleware ---
 const authenticateToken = (req, res, next) => {
-    // NOTE: Netlify function headers are all lowercase
     const authHeader = req.headers['authorization']; 
-    const token = authHeader && authHeader.split(' ')[1]; // Expects: "Bearer <TOKEN>"
+    const token = authHeader && authHeader.split(' ')[1];
 
     if (token == null) {
         return res.status(401).json({ message: "Access denied. No token provided." });
     }
 
-    // JWT_SECRET must be set in Netlify Environment Variables
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) {
+            // Log the error detail for Netlify debugging
+            console.error("JWT Verification Failed:", err.message); 
             return res.status(403).json({ message: "Invalid or expired token." });
         }
-        // Attach user info (id/user_id, email) to the request object
-        // The token payload uses 'id' which corresponds to 'user_id' in the DB
         req.user = user; 
         next();
     });
@@ -48,8 +44,9 @@ const authenticateToken = (req, res, next) => {
 
 // --- API Endpoints ---
 
-// POST /api/register - User Registration (Existing Week 5)
+// POST /api/register - User Registration
 app.post('/api/register', async (req, res) => {
+    // ... (No functional changes needed here) ...
     const { email, password } = req.body;
 
     if (!email || !password || password.length < 6) {
@@ -78,7 +75,7 @@ app.post('/api/register', async (req, res) => {
 });
 
 
-// POST /api/login - User Login (WEEK 6 IMPLEMENTATION)
+// POST /api/login - User Login (FIXED)
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -87,23 +84,23 @@ app.post('/api/login', async (req, res) => {
     }
 
     try {
-        // Find the user by email
-        const user = await db.get('SELECT user_id, email, hashed_password FROM users WHERE email = ?', email);
+        // FIX: Added the array wrapper [email] for the sqlite parameter.
+        const user = await db.get('SELECT user_id, email, hashed_password FROM users WHERE email = ?', [email]);
         
         if (!user) {
-            return res.status(401).json({ message: "Invalid email or password." });
+            // Added descriptive error message
+            return res.status(401).json({ message: "Invalid email or password. (User Not Found)" });
         }
 
-        // Compare the provided password with the hashed password
         const match = await bcrypt.compare(password, user.hashed_password);
 
         if (!match) {
-            return res.status(401).json({ message: "Invalid email or password." });
+            // Added descriptive error message
+            return res.status(401).json({ message: "Invalid email or password. (Password Mismatch)" });
         }
 
-        // Create a JWT (Token)
         const token = jwt.sign(
-            { id: user.user_id, email: user.email }, // Use user_id as 'id' in token payload
+            { id: user.user_id, email: user.email }, 
             process.env.JWT_SECRET,
             { expiresIn: '1d' }
         );
@@ -121,9 +118,9 @@ app.post('/api/login', async (req, res) => {
 });
 
 
-// POST /api/identify - Plant Identification API Submission (WEEK 6)
+// POST /api/identify - Plant Identification API Submission (FIXED)
 app.post('/api/identify', authenticateToken, async (req, res) => {
-    const { image_data } = req.body; // Expecting Base64 image string
+    const { image_data } = req.body;
 
     if (!image_data) {
         return res.status(400).json({ message: "Image data is required for identification." });
@@ -144,14 +141,31 @@ app.post('/api/identify', authenticateToken, async (req, res) => {
             })
         });
 
-        const data = await response.json();
+        // FIX: The API sometimes returns non-JSON error text. We must check the status 
+        // before attempting to parse the body as JSON.
+        if (!response.ok) {
+            // CRITICAL FIX: Read the body as text first to avoid the JSON parsing error
+            const errorText = await response.text();
+            
+            // Log the raw error text for Netlify debugging
+            console.error(`Plant ID API Error (Status ${response.status}):`, errorText.substring(0, 100)); 
+            
+            let message = "Error communicating with the plant identification service.";
+            
+            // Attempt to parse as JSON if it looks like a JSON error structure
+            try {
+                const errorData = JSON.parse(errorText);
+                message = errorData.detail || message;
+            } catch (e) {
+                // If it's not JSON (like the "The specif..." error), return a generic message
+                message = `API Key Issue. Details: ${errorText.substring(0, 40)}...`;
+            }
 
-        if (response.ok) {
-            res.status(200).json(data);
-        } else {
-            console.error("Plant ID API Error:", data);
-            res.status(response.status).json({ message: data.detail || "Error communicating with the plant identification service." });
+            return res.status(response.status).json({ message: message });
         }
+
+        const data = await response.json();
+        res.status(200).json(data);
 
     } catch (error) {
         console.error("Server error during plant identification:", error);
@@ -160,15 +174,15 @@ app.post('/api/identify', authenticateToken, async (req, res) => {
 });
 
 
-// GET /api/plant-details/:scientific_name - Fetch Supplemental Trefle Data (WEEK 6 ADDITION)
-app.get('/api/plant-details/:scientific_name', authenticateToken, async (req, res) => { // <--- CHANGE 1: ADDED NEW ENDPOINT
+// GET /api/plant-details/:scientific_name - Fetch Supplemental Trefle Data
+app.get('/api/plant-details/:scientific_name', authenticateToken, async (req, res) => { 
+    // ... (No functional changes needed here) ...
     const scientificName = req.params.scientific_name;
 
     if (!scientificName) {
         return res.status(400).json({ message: "Scientific name is required." });
     }
 
-    // NOTE: This assumes Trefle is used and TREFLE_API_KEY is configured in Netlify environment variables
     const trefleUrl = `https://trefle.io/api/v1/species/search?q=${encodeURIComponent(scientificName)}&token=${process.env.TREFLE_API_KEY}`;
 
     try {
@@ -176,10 +190,8 @@ app.get('/api/plant-details/:scientific_name', authenticateToken, async (req, re
         const data = await response.json();
 
         if (response.ok) {
-            // Success: Return the supplemental data
             res.status(200).json(data);
         } else {
-            // Trefle/External API Error Handling
             console.error("Trefle API Error:", data);
             res.status(response.status).json({ message: data.error || "Error fetching supplemental plant details." });
         }
@@ -190,10 +202,11 @@ app.get('/api/plant-details/:scientific_name', authenticateToken, async (req, re
 });
 
 
-// POST /api/plants - Write Function to Save Plant to User Collection (WEEK 6)
-app.post('/api/plants', authenticateToken, async (req, res) => { // <--- CHANGE 2: ADDED PLANT CRUD ENDPOINT (POST)
+// POST /api/plants - Write Function to Save Plant to User Collection
+app.post('/api/plants', authenticateToken, async (req, res) => {
+    // ... (No functional changes needed here) ...
     const { name, scientific_name, common_name, image_url, notes } = req.body;
-    const user_id = req.user.id; // User ID from the JWT payload
+    const user_id = req.user.id;
 
     if (!name || !user_id) {
         return res.status(400).json({ message: "Plant name and user ID are required." });
@@ -217,8 +230,9 @@ app.post('/api/plants', authenticateToken, async (req, res) => { // <--- CHANGE 
 });
 
 
-// GET /api/plants - Develop 'My Plants' Dashboard Card View (WEEK 6)
-app.get('/api/plants', authenticateToken, async (req, res) => { // <--- CHANGE 3: ADDED PLANT CRUD ENDPOINT (GET ALL)
+// GET /api/plants - Develop 'My Plants' Dashboard Card View
+app.get('/api/plants', authenticateToken, async (req, res) => {
+    // ... (No functional changes needed here) ...
     const user_id = req.user.id;
     try {
         const plants = await db.all('SELECT * FROM plants WHERE user_id = ? ORDER BY date_added DESC', user_id);
@@ -230,8 +244,9 @@ app.get('/api/plants', authenticateToken, async (req, res) => { // <--- CHANGE 3
 });
 
 
-// GET /api/plants/:id - Build Detailed Plant Profile View (WEEK 6)
-app.get('/api/plants/:id', authenticateToken, async (req, res) => { // <--- CHANGE 4: ADDED PLANT CRUD ENDPOINT (GET SINGLE)
+// GET /api/plants/:id - Build Detailed Plant Profile View
+app.get('/api/plants/:id', authenticateToken, async (req, res) => {
+    // ... (No functional changes needed here) ...
     const plant_id = req.params.id;
     const user_id = req.user.id;
     try {
@@ -247,8 +262,9 @@ app.get('/api/plants/:id', authenticateToken, async (req, res) => { // <--- CHAN
 });
 
 
-// DELETE /api/plants/:id - Implement Plant Deletion Functionality (WEEK 6)
-app.delete('/api/plants/:id', authenticateToken, async (req, res) => { // <--- CHANGE 5: ADDED PLANT CRUD ENDPOINT (DELETE)
+// DELETE /api/plants/:id - Implement Plant Deletion Functionality
+app.delete('/api/plants/:id', authenticateToken, async (req, res) => {
+    // ... (No functional changes needed here) ...
     const plant_id = req.params.id;
     const user_id = req.user.id;
     try {
@@ -264,5 +280,5 @@ app.delete('/api/plants/:id', authenticateToken, async (req, res) => { // <--- C
 });
 
 
-// 6. Export the handler for Netlify (CRITICAL)
-export const handler = serverless(app); // <--- CHANGE 6: ADDED EXPORT FOR NETLIFY SERVERLESS
+// Export the handler for Netlify (CRITICAL)
+export const handler = serverless(app);
