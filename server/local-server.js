@@ -1,9 +1,9 @@
 import express from 'express';
 import bcrypt from 'bcrypt'; 
-import jwt from 'jsonwebtoken'; // <-- NEW: Required for JWT creation/verification
-import fetch from 'node-fetch'; // <-- NEW: Required for external API calls (Plant.ID/Trefle)
+import jwt from 'jsonwebtoken';
+import fetch from 'node-fetch';
 import 'dotenv/config';
-import { dbPromise } from './database.js'; 
+import { dbPromise } from './database.js'; // Assuming database.js is in the same folder
 import path from 'path'; 
 import { fileURLToPath } from 'url'; 
 
@@ -94,23 +94,42 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
 
+    // --- DEBUG LOGGING START ---
+    console.log('\n--- LOGIN ATTEMPT RECEIVED ---');
+    console.log(`Email: ${email}`);
+    // --- DEBUG LOGGING END ---
+
     if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required." });
     }
 
     try {
-        // Find the user by email (Note: using user_id from your schema)
-        const user = await db.get('SELECT user_id, email, hashed_password FROM users WHERE email = ?', email);
+        // Find the user by email (Using 'user_id' as defined in your database.js)
+        // CRITICAL FIX: The parameter must be passed as an array [email]
+        const user = await db.get('SELECT user_id, email, hashed_password FROM users WHERE email = ?', [email]);
         
+        // --- DEBUG LOGGING START ---
+        console.log('1. User Found:', !!user);
+        if (user) {
+            console.log(`   - User ID from DB: ${user.user_id}`);
+        }
+        // --- DEBUG LOGGING END ---
+
         if (!user) {
-            return res.status(401).json({ message: "Invalid email or password." });
+            // Added descriptive message for better client feedback
+            return res.status(401).json({ message: "Invalid email or password. (User Not Found)" });
         }
 
         // Compare the provided password with the hashed password
         const match = await bcrypt.compare(password, user.hashed_password);
 
+        // --- DEBUG LOGGING START ---
+        console.log('2. Password Match Result:', match);
+        // --- DEBUG LOGGING END ---
+
         if (!match) {
-            return res.status(401).json({ message: "Invalid email or password." });
+            // Added descriptive message for better client feedback
+            return res.status(401).json({ message: "Invalid email or password. (Password Mismatch)" });
         }
 
         // Create a JWT (Token)
@@ -119,6 +138,10 @@ app.post('/api/login', async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '1d' } // Token expires in 1 day
         );
+        
+        // --- DEBUG LOGGING START ---
+        console.log('3. Login SUCCESS. Sending JWT.');
+        // --- DEBUG LOGGING END ---
 
         // Send the token back to the client
         res.status(200).json({ 
