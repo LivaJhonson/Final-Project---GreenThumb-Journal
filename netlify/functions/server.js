@@ -7,7 +7,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken'; // <-- REQUIRED for Week 6 Login/Auth
 import fetch from 'node-fetch'; // <-- REQUIRED for external API calls (Plant.ID/Trefle)
 import 'dotenv/config'; 
-import { dbPromise } from '../database.js'; // Note: Adjust path if needed
+import { dbPromise } from './database.js'; // Note: Adjust path if needed
 
 // --- Database Connection Setup ---
 let db;
