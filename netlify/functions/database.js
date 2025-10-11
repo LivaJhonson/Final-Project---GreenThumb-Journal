@@ -8,7 +8,8 @@ import 'dotenv/config';
 // that Netlify copies to the function's execution environment. 
 // A common pattern is to point to the file that was deployed with your build.
 // NOTE: Ensure your Netlify environment variable DB_FILE is set correctly (e.g., "./greenthumb.sqlite").
-const dbFile = process.env.DB_FILE;
+//const dbFile = process.env.DB_FILE;
+const dbFile = '/tmp/greenthumb.sqlite'; // <--- USE Writable /tmp Directory for Netlify
 
 // Variable to hold the database connection object once it's open
 let db;
