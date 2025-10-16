@@ -30,7 +30,7 @@ async function setupDatabase() {
         console.log("Database initialized: 'users' table is ready (Week 5).");
 
         // 2. Create the 'plants' Table (WEEK 6)
-        // Added identification_data column to store API diagnosis JSON
+        // ADDED 'trefle_id' column for fetching supplemental data
         await db.exec(`
             CREATE TABLE IF NOT EXISTS plants (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,6 +41,7 @@ async function setupDatabase() {
                 image_url TEXT,
                 notes TEXT,
                 identification_data TEXT, -- Stores JSON response from Plant.ID/Trefle (Week 6)
+                trefle_id TEXT,             -- <--- NEW COLUMN ADDED HERE
                 date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
             );

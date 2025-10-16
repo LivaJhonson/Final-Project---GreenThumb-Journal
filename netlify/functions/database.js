@@ -1,11 +1,12 @@
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
-// Note: 'dotenv/config' is often not needed here if variables are set in Netlify
 import 'dotenv/config'; 
 
-// This path is CRITICAL for Netlify. It must point to where your SQLite file lives.
-// The /tmp directory is the only writable location in a Netlify function.
-const dbFile = '/tmp/greenthumb.sqlite'; 
+// --- CRITICAL FIX FOR NETLIFY: USE IN-MEMORY DATABASE ---
+// Netlify deletes files in /tmp between function calls. 
+// Using ':memory:' ensures the database initializes quickly and successfully
+// every time the function starts (though data is LOST upon function sleep/wake).
+const dbFile = ':memory:'; 
 
 // Variable to hold the database connection object once it's open
 let db;
@@ -33,7 +34,7 @@ async function setupDatabase() {
         console.log("Database initialized: 'users' table is ready (Week 5).");
 
         // 2. Create the 'plants' Table (WEEK 6)
-        // Added 'identification_data' to store API results
+        // Added 'trefle_id' which is used in the revised server.js for rich data fetch
         await db.exec(`
             CREATE TABLE IF NOT EXISTS plants (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,12 +44,13 @@ async function setupDatabase() {
                 common_name TEXT,
                 image_url TEXT,
                 notes TEXT,
-                identification_data TEXT, -- Stores JSON response from Plant.ID/Trefle (Week 6)
+                identification_data TEXT, -- Stores JSON response from Plant.ID (Week 6)
+                trefle_id TEXT,           -- Added for Trefle API detail fetching (Revised Week 7)
                 date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
             );
         `);
-        console.log("Database initialized: 'plants' table is ready (Week 6).");
+        console.log("Database initialized: 'plants' table is ready (Week 6/7).");
 
         // 3. Create the 'reminders' Table (WEEK 7)
         await db.exec(`
@@ -81,6 +83,7 @@ async function setupDatabase() {
         return db;
     } catch (error) {
         console.error("Failed to set up database:", error);
+        // Throw the error so the server.js catch block can handle it
         throw error; 
     }
 }
@@ -89,7 +92,8 @@ async function setupDatabase() {
 const dbPromise = setupDatabase();
 export { dbPromise };
 
-// Export a helper function (getDb) for clean access in API routes
+// The getDb function is good practice, but not strictly needed if server.js uses the 'await dbPromise' pattern.
+// We'll keep it as it doesn't hurt.
 export const getDb = async () => {
     // If 'db' is not yet assigned, wait for it.
     if (!db) {

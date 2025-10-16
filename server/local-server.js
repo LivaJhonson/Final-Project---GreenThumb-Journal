@@ -177,26 +177,43 @@ app.post('/api/identify', authenticateToken, async (req, res) => {
     }
 });
 
-// GET /api/plant-details/:scientific_name - Fetch Supplemental Trefle Data (WEEK 6)
+// GET /api/plant-details/:scientific_name - Fetch Supplemental Trefle Data (Updated for Rich Data Fetch)
 app.get('/api/plant-details/:scientific_name', authenticateToken, async (req, res) => {
     const scientificName = req.params.scientific_name;
+    const trefleKey = process.env.TREFLE_API_KEY;
 
     if (!scientificName) {
         return res.status(400).json({ message: "Scientific name is required." });
     }
 
-    const trefleUrl = `https://trefle.io/api/v1/species/search?q=${encodeURIComponent(scientificName)}&token=${process.env.TREFLE_API_KEY}`;
-
     try {
-        const response = await fetch(trefleUrl);
-        const data = await response.json();
+        // --- STEP 1: Search for the species to get its slug/ID ---
+        const searchUrl = `https://trefle.io/api/v1/species/search?q=${encodeURIComponent(scientificName)}&token=${trefleKey}`;
+        let searchResponse = await fetch(searchUrl);
+        let searchData = await searchResponse.json();
 
-        if (response.ok) {
-            res.status(200).json(data);
-        } else {
-            console.error("Trefle API Error:", data);
-            res.status(response.status).json({ message: data.error || "Error fetching supplemental plant details." });
+        if (!searchResponse.ok || !searchData.data || searchData.data.length === 0) {
+            console.log(`Trefle search failed or found no results for: ${scientificName}`);
+            // Return null data so the client knows it couldn't find the species
+            return res.status(200).json({ data: null }); 
         }
+
+        // Get the slug (unique identifier for the detail endpoint)
+        const speciesSlug = searchData.data[0].slug;
+
+        // --- STEP 2: Fetch the full details using the slug ---
+        const detailsUrl = `https://trefle.io/api/v1/species/${speciesSlug}?token=${trefleKey}`;
+        let detailsResponse = await fetch(detailsUrl);
+        let detailsData = await detailsResponse.json();
+
+        if (detailsResponse.ok) {
+            // detailsData contains a 'data' object with all the rich fields
+            res.status(200).json(detailsData);
+        } else {
+            console.error("Trefle Detail API Error:", detailsData);
+            res.status(detailsResponse.status).json({ message: detailsData.error || "Error fetching supplemental plant details." });
+        }
+
     } catch (error) {
         console.error("Server error during supplemental data retrieval:", error);
         res.status(500).json({ message: "An internal server error occurred during API communication." });
@@ -213,11 +230,38 @@ app.post('/api/plants', authenticateToken, async (req, res) => {
         return res.status(400).json({ message: "Plant name and user ID are required." });
     }
 
+    let trefle_id = null; // Initialize trefle_id as null
+
+    // --- STEP 1: Fetch Trefle ID (if scientific name is available) ---
+    if (scientific_name) {
+        try {
+            // Re-use the Trefle logic (calling the external Trefle API directly)
+            const trefleUrl = `https://trefle.io/api/v1/species/search?q=${encodeURIComponent(scientific_name)}&token=${process.env.TREFLE_API_KEY}`;
+            
+            const response = await fetch(trefleUrl);
+            const data = await response.json();
+
+            // Check if Trefle returned results and extract the ID
+            if (response.ok && data.data && data.data.length > 0) {
+                // Trefle returns an array of results; use the first one's ID (the 'slug')
+                trefle_id = data.data[0].slug; 
+            } else {
+                 console.log(`Trefle search for '${scientific_name}' returned no ID or failed.`);
+            }
+
+        } catch (error) {
+            // Log Trefle fetch error but DO NOT fail the main plant save
+            console.error("Non-critical: Error fetching Trefle ID during plant save:", error);
+        }
+    }
+    // --- END STEP 1 ---
+
+    // --- STEP 2: Insert into Database (including the new trefle_id) ---
     try {
-        // Storing identification_data (which includes diagnosis info) as JSON string
+        // The SQL statement now includes the 'trefle_id' column
         const result = await db.run(
-            'INSERT INTO plants (user_id, name, scientific_name, common_name, image_url, notes, identification_data) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [user_id, name, scientific_name, common_name, image_url || null, notes || null, JSON.stringify(identification_data) || null]
+            'INSERT INTO plants (user_id, name, scientific_name, common_name, image_url, notes, identification_data, trefle_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [user_id, name, scientific_name, common_name, image_url || null, notes || null, JSON.stringify(identification_data) || null, trefle_id]
         );
 
         res.status(201).json({ 
@@ -226,6 +270,7 @@ app.post('/api/plants', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
+        // This catch block will fire if the SQL INSERT fails 
         console.error("Error saving plant:", error);
         res.status(500).json({ message: "Failed to save the plant to the database." });
     }
@@ -236,6 +281,7 @@ app.post('/api/plants', authenticateToken, async (req, res) => {
 app.get('/api/plants', authenticateToken, async (req, res) => {
     const user_id = req.user.id;
     try {
+        // Fetch the new trefle_id column here
         const plants = await db.all('SELECT * FROM plants WHERE user_id = ? ORDER BY date_added DESC', user_id);
         
         // Ensure identification_data is parsed back into JSON for the client
@@ -256,6 +302,7 @@ app.get('/api/plants/:id', authenticateToken, async (req, res) => {
     const plant_id = req.params.id;
     const user_id = req.user.id;
     try {
+        // Fetch the new trefle_id column here
         const plant = await db.get('SELECT * FROM plants WHERE id = ? AND user_id = ?', [plant_id, user_id]);
         if (!plant) {
             return res.status(404).json({ message: "Plant not found or does not belong to user." });

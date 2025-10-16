@@ -1,11 +1,25 @@
 import express from 'express';
-// --- IMPORTANT: Use the 'netlify' adapter for Express ---
 import serverless from 'serverless-http'; 
 import bcrypt from 'bcrypt'; 
 import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
 import 'dotenv/config'; 
 import { dbPromise } from './database.js';
+
+// --- DATABASE CONNECTION SETUP (CRITICAL FIX FOR SERVERLESS) ---
+let db;
+// Use an IIFE (Immediately Invoked Function Expression) to establish 
+// the database connection synchronously for all routes before the handler is created.
+// This is the most reliable pattern for serverless Express.
+await (async () => {
+    try {
+        db = await dbPromise;
+        console.log("Database connection established successfully.");
+    } catch (err) {
+        console.error("Critical: Database connection failed during server startup.", err);
+        // In a function environment, we can't stop the process, but the error is logged.
+    }
+})();
 
 // --- DATE CALCULATION UTILITY (WEEK 7) ---
 
@@ -16,21 +30,13 @@ import { dbPromise } from './database.js';
  * @returns {string} SQLite function string to calculate the date.
  */
 function calculateNextDueDateSQL(lastCompletedDate, frequencyDays) {
-    // Note: The sqlite date function uses 'day' for days, 'month' for months, etc.
     return `strftime('%Y-%m-%d', '${lastCompletedDate}', '+${frequencyDays} day')`;
 }
 
-// --- Database Connection Setup ---
-let db;
-// Await the promise to ensure the database is open and tables are created before routes run.
-dbPromise.then(instance => {
-    db = instance;
-}).catch(err => {
-    console.error("Critical: Database connection failed during server startup.", err);
-});
 
 const app = express();
 app.use(express.json()); 
+
 
 // --- Authentication Middleware (WEEK 6) ---
 const authenticateToken = (req, res, next) => {
@@ -43,7 +49,6 @@ const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) {
-            // Log the error detail for Netlify debugging
             console.error("JWT Verification Failed:", err.message); 
             return res.status(403).json({ message: "Invalid or expired token." });
         }
@@ -53,7 +58,10 @@ const authenticateToken = (req, res, next) => {
 };
 
 
+// ----------------------------------------------------------------------
 // --- API Endpoints ---
+// ----------------------------------------------------------------------
+
 
 // POST /api/register - User Registration (WEEK 5)
 app.post('/api/register', async (req, res) => {
@@ -62,6 +70,9 @@ app.post('/api/register', async (req, res) => {
     if (!email || !password || password.length < 6) {
         return res.status(400).json({ message: "Email is required and password must be at least 6 characters." });
     }
+
+    // Check for db readiness before attempting query
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10); 
@@ -76,7 +87,7 @@ app.post('/api/register', async (req, res) => {
         });
 
     } catch (error) {
-        if (error.message.includes('UNIQUE constraint failed')) {
+        if (error.message && error.message.includes('UNIQUE constraint failed')) {
             return res.status(409).json({ message: "Error: A user with this email already exists." });
         }
         console.error("Server registration error:", error);
@@ -88,6 +99,7 @@ app.post('/api/register', async (req, res) => {
 // POST /api/login - User Login (WEEK 6)
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
 
     if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required." });
@@ -148,14 +160,11 @@ app.post('/api/identify', authenticateToken, async (req, res) => {
             })
         });
 
-        // Handle non-JSON API errors gracefully
         if (!response.ok) {
             const errorText = await response.text();
-            
             console.error(`Plant ID API Error (Status ${response.status}):`, errorText.substring(0, 100)); 
             
             let message = "Error communicating with the plant identification service.";
-            
             try {
                 const errorData = JSON.parse(errorText);
                 message = errorData.detail || message;
@@ -176,26 +185,43 @@ app.post('/api/identify', authenticateToken, async (req, res) => {
 });
 
 
-// GET /api/plant-details/:scientific_name - Fetch Supplemental Trefle Data (WEEK 6)
+// GET /api/plant-details/:scientific_name - Fetch Supplemental Trefle Data (FIXED: Two-Step Rich Data Fetch)
 app.get('/api/plant-details/:scientific_name', authenticateToken, async (req, res) => { 
     const scientificName = req.params.scientific_name;
+    const trefleKey = process.env.TREFLE_API_KEY;
 
     if (!scientificName) {
         return res.status(400).json({ message: "Scientific name is required." });
     }
 
-    const trefleUrl = `https://trefle.io/api/v1/species/search?q=${encodeURIComponent(scientificName)}&token=${process.env.TREFLE_API_KEY}`;
-
     try {
-        const response = await fetch(trefleUrl);
-        const data = await response.json();
+        // --- STEP 1: Search for the species to get its slug/ID ---
+        const searchUrl = `https://trefle.io/api/v1/species/search?q=${encodeURIComponent(scientificName)}&token=${trefleKey}`;
+        let searchResponse = await fetch(searchUrl);
+        let searchData = await searchResponse.json();
 
-        if (response.ok) {
-            res.status(200).json(data);
-        } else {
-            console.error("Trefle API Error:", data);
-            res.status(response.status).json({ message: data.error || "Error fetching supplemental plant details." });
+        if (!searchResponse.ok || !searchData.data || searchData.data.length === 0) {
+            console.log(`Trefle search failed or found no results for: ${scientificName}`);
+            // Return null data so the client knows it couldn't find the species
+            return res.status(200).json({ data: null }); 
         }
+
+        // Get the slug (unique identifier for the detail endpoint)
+        const speciesSlug = searchData.data[0].slug;
+
+        // --- STEP 2: Fetch the full details using the slug ---
+        const detailsUrl = `https://trefle.io/api/v1/species/${speciesSlug}?token=${trefleKey}`;
+        let detailsResponse = await fetch(detailsUrl);
+        let detailsData = await detailsResponse.json();
+
+        if (detailsResponse.ok) {
+            // detailsData contains a 'data' object with all the rich fields
+            res.status(200).json(detailsData);
+        } else {
+            console.error("Trefle Detail API Error:", detailsData);
+            res.status(detailsResponse.status).json({ message: detailsData.error || "Error fetching supplemental plant details." });
+        }
+        
     } catch (error) {
         console.error("Server error during supplemental data retrieval:", error);
         res.status(500).json({ message: "An internal server error occurred during API communication." });
@@ -207,6 +233,7 @@ app.get('/api/plant-details/:scientific_name', authenticateToken, async (req, re
 app.post('/api/plants', authenticateToken, async (req, res) => {
     const { name, scientific_name, common_name, image_url, notes, identification_data } = req.body;
     const user_id = req.user.id;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
 
     if (!name || !user_id) {
         return res.status(400).json({ message: "Plant name and user ID are required." });
@@ -234,6 +261,8 @@ app.post('/api/plants', authenticateToken, async (req, res) => {
 // GET /api/plants - Fetch User's Plant Collection (WEEK 6)
 app.get('/api/plants', authenticateToken, async (req, res) => {
     const user_id = req.user.id;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
+
     try {
         const plants = await db.all('SELECT * FROM plants WHERE user_id = ? ORDER BY date_added DESC', user_id);
         
@@ -254,6 +283,8 @@ app.get('/api/plants', authenticateToken, async (req, res) => {
 app.get('/api/plants/:id', authenticateToken, async (req, res) => {
     const plant_id = req.params.id;
     const user_id = req.user.id;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
+
     try {
         const plant = await db.get('SELECT * FROM plants WHERE id = ? AND user_id = ?', [plant_id, user_id]);
         if (!plant) {
@@ -282,12 +313,12 @@ app.patch('/api/plants/:id', authenticateToken, async (req, res) => {
     const plant_id = req.params.id;
     const user_id = req.user.id;
     const { name, scientific_name, common_name, notes } = req.body;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
 
     let fields = [];
     let params = [];
 
     if (name) { fields.push('name = ?'); params.push(name); }
-    // Note: Scientific name and Common name can be NULL (empty string '' in form should be treated as NULL/no update)
     if (scientific_name !== undefined) { fields.push('scientific_name = ?'); params.push(scientific_name || null); }
     if (common_name !== undefined) { fields.push('common_name = ?'); params.push(common_name || null); }
     if (notes !== undefined) { fields.push('notes = ?'); params.push(notes || null); }
@@ -320,6 +351,7 @@ app.post('/api/plants/:id/photos', authenticateToken, async (req, res) => {
     const plant_id = req.params.id;
     const { image_url, notes } = req.body;
     const user_id = req.user.id;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
 
     if (!image_url) {
         return res.status(400).json({ message: "Image URL is required." });
@@ -354,6 +386,7 @@ app.post('/api/plants/:id/photos', authenticateToken, async (req, res) => {
 app.get('/api/plants/:id/photos', authenticateToken, async (req, res) => {
     const plant_id = req.params.id;
     const user_id = req.user.id;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
     
     try {
         // Security check: Verify the plant belongs to the user
@@ -383,6 +416,8 @@ app.get('/api/plants/:id/photos', authenticateToken, async (req, res) => {
 app.delete('/api/plants/:id', authenticateToken, async (req, res) => {
     const plant_id = req.params.id;
     const user_id = req.user.id;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
+
     try {
         // Database should handle CASCADE DELETE for related records (reminders, photos)
         const result = await db.run('DELETE FROM plants WHERE id = ? AND user_id = ?', [plant_id, user_id]);
@@ -405,6 +440,7 @@ app.delete('/api/plants/:id', authenticateToken, async (req, res) => {
 app.post('/api/reminders', authenticateToken, async (req, res) => {
     const { plant_id, type, frequency_days, last_completed } = req.body;
     const user_id = req.user.id;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
 
     if (!plant_id || !type || !frequency_days) {
         return res.status(400).json({ message: "Plant ID, type, and frequency are required." });
@@ -447,6 +483,7 @@ app.post('/api/reminders', authenticateToken, async (req, res) => {
 // GET /api/reminders/due - Fetch tasks due today or overdue (WEEK 7: Today's Tasks Widget)
 app.get('/api/reminders/due', authenticateToken, async (req, res) => {
     const user_id = req.user.id;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
     
     try {
         const today = new Date().toISOString().split('T')[0];
@@ -481,6 +518,7 @@ app.post('/api/reminders/:id/complete', authenticateToken, async (req, res) => {
     const reminder_id = req.params.id;
     const user_id = req.user.id;
     const completionDate = new Date().toISOString().split('T')[0];
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
 
     try {
         const reminder = await db.get(
@@ -523,6 +561,7 @@ app.post('/api/reminders/:id/complete', authenticateToken, async (req, res) => {
 app.get('/api/plants/:id/reminders', authenticateToken, async (req, res) => {
     const plant_id = req.params.id;
     const user_id = req.user.id;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
     
     try {
         const plant = await db.get('SELECT user_id FROM plants WHERE id = ?', [plant_id]);
@@ -550,6 +589,7 @@ app.get('/api/plants/:id/reminders', authenticateToken, async (req, res) => {
 app.delete('/api/reminders/:id', authenticateToken, async (req, res) => {
     const reminder_id = req.params.id;
     const user_id = req.user.id;
+    if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
     
     try {
         // Ensure the user owns the plant associated with the reminder before deleting
