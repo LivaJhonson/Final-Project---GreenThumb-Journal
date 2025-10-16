@@ -3,7 +3,7 @@
 // 1. Get DOM elements
 const identifyModal = document.getElementById('identify-modal');
 const openModalBtn = document.getElementById('open-identify-modal-btn'); // Button on dashboard to open modal
-const closeModalBtn = document.getElementById('close-modal-btn');
+const closeModalBtn = document.getElementById('close-identify-modal-btn');
 const cancelIdentifyBtn = document.getElementById('cancel-identify-btn');
 const identifyForm = document.getElementById('identify-form');
 const uploadButton = document.getElementById('upload-button');
@@ -237,4 +237,4 @@ resultsArea.addEventListener('click', async (e) => {
             saveBtn.disabled = false;
         }
     }
-});
+}); 

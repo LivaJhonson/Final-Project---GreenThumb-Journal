@@ -2,7 +2,7 @@
     /* Color Palette (GreenThumb Identity) */
     --color-primary: #38761D; /* Forest Green */
     --color-secondary: #C9D86D; /* Moss Green */ 
-    --color-accent: #2986CC;    /* Used for success/links/feedback (a nice blue/green contrast) */
+    --color-accent: #2986CC; 	/* Used for success/links/feedback (a nice blue/green contrast) */
     --color-background-light: #F5F5F5; 
     --color-background-medium: #EAEAEA;
     --color-text-dark: #333333;
@@ -10,6 +10,12 @@
     --color-error: #C20E0E;
     --color-border: #CCCCCC;
     --color-white: #FFFFFF;
+    
+    /* WEEK 7: Task Status Colors */
+    --color-success: #38761D; /* Use primary color for success/done */
+    --color-warning: #FFC107; /* Yellow/Orange for impending tasks */
+    --color-critical: #C20E0E; /* Use error color for overdue */
+    --color-info: #2986CC; /* Use accent color for details */
 }
 
 /* --- Global Typography and Reset --- */
@@ -20,6 +26,11 @@ body {
     margin: 0;
     padding: 0;
     line-height: 1.6;
+}
+
+/* WEEK 7: Class to prevent scroll when modal is open */
+.modal-open {
+    overflow: hidden;
 }
 
 h1, h2, h3 {
@@ -38,11 +49,37 @@ h2 {
     display: none !important;
 }
 
-.error-message {
+.error-message, .form-message.error {
     color: var(--color-error);
     font-weight: bold;
     margin-top: 10px;
 }
+
+/* WEEK 7: Success message style for forms */
+.form-message.success {
+    color: var(--color-success);
+    font-weight: bold;
+    background-color: #f0fff0;
+    border: 1px solid var(--color-success);
+}
+
+.loading-full-page {
+    text-align: center;
+    padding: 50px 0;
+    font-size: 1.2rem;
+    color: var(--color-text-secondary);
+}
+
+.placeholder-text {
+    text-align: center;
+    padding: 30px;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    background-color: var(--color-background-medium);
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
 
 /* --- Button Styles (General) --- */
 .btn {
@@ -92,17 +129,46 @@ h2 {
     background-color: #9f0b0b;
 }
 
+/* WEEK 7: Added Info and Success button styles */
+.btn-info {
+    background-color: var(--color-info);
+    color: var(--color-white);
+}
+.btn-info:hover {
+    background-color: #206baa;
+}
+
+.btn-success {
+    background-color: var(--color-success);
+    color: var(--color-white);
+}
+.btn-success:hover {
+    background-color: #2e6017;
+}
+
+.btn-link {
+    background: none;
+    color: var(--color-accent);
+    padding: 5px 8px;
+    font-size: 0.85rem;
+}
+.btn-link:hover {
+    text-decoration: underline;
+    background: none;
+}
+
+
 .btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
-.btn-sm {
+.btn-small {
     padding: 5px 10px;
     font-size: 0.85rem;
 }
 
-/* --- Login/Register Form Styles --- */
+/* --- Login/Register Form Styles (WEEK 5) --- */
 .form-container {
     max-width: 400px;
     margin: 50px auto;
@@ -112,7 +178,13 @@ h2 {
     box-shadow: 0 6px 12px rgba(0,0,0,0.1);
 }
 
-input[type="email"], input[type="password"] {
+input[type="email"], 
+input[type="password"],
+input[type="text"],
+input[type="number"], 
+input[type="date"], /* WEEK 7: Added date input style for modals */
+select, /* WEEK 7: Added select style for modals */
+textarea { 
     width: 100%;
     padding: 12px;
     margin: 8px 0 15px 0;
@@ -120,6 +192,7 @@ input[type="email"], input[type="password"] {
     border-radius: 4px;
     box-sizing: border-box;
     font-size: 16px;
+    resize: vertical; 
 }
 
 .form-container button[type="submit"] {
@@ -133,7 +206,7 @@ input[type="email"], input[type="password"] {
     text-align: center;
 }
 
-/* --- Dashboard Layout (dashboard.html) --- */
+/* --- Dashboard Layout (dashboard.html) (WEEK 6/7) --- */
 .header {
     display: flex;
     justify-content: space-between;
@@ -144,10 +217,58 @@ input[type="email"], input[type="password"] {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
+/* WEEK 8: Desktop Navigation Styles */
+.main-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 20px;
+}
+.main-nav a {
+    text-decoration: none;
+    color: var(--color-text-dark);
+    font-weight: bold;
+    padding: 8px 10px;
+    transition: color 0.2s;
+}
+.main-nav a:hover {
+    color: var(--color-primary);
+}
+
+
 .dashboard-main {
     max-width: 1200px;
     margin: 30px auto;
     padding: 0 20px;
+}
+
+.dashboard-grid { 
+    display: grid;
+    grid-template-columns: 1fr 3fr; 
+    gap: 30px;
+}
+
+.dashboard-plants-section {
+    grid-column: 2 / 3;
+}
+
+.dashboard-tasks-section {
+    grid-column: 1 / 2;
+    background-color: var(--color-white);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    height: fit-content; 
+}
+
+.dashboard-tasks-section h2, .dashboard-plants-section h2 {
+    text-align: left;
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--color-background-medium);
+    padding-bottom: 10px;
+    font-size: 1.5rem;
 }
 
 .add-plant-btn {
@@ -157,7 +278,64 @@ input[type="email"], input[type="password"] {
     font-size: 1.1rem;
 }
 
-/* --- Plant Card Grid --- */
+
+/* --- WEEK 7: Today's Tasks Widget Styling --- */
+
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+}
+
+.task-due {
+    background-color: #f0fff0; /* Light green/success background */
+    border-left: 5px solid var(--color-success);
+}
+
+.task-overdue {
+    background-color: #fff0f0; /* Light red/error background */
+    border-left: 5px solid var(--color-critical);
+}
+
+.task-details {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.task-name {
+    font-size: 1rem;
+    margin: 0;
+    color: var(--color-text-dark);
+}
+
+.task-status {
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin: 2px 0 0 0;
+}
+
+.task-overdue .task-status {
+    color: var(--color-critical);
+}
+.task-due .task-status {
+    color: var(--color-success);
+}
+
+.task-actions {
+    display: flex;
+    gap: 5px;
+}
+
+/* --- Plant Card Grid (WEEK 6) --- */
 .plant-cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -205,98 +383,94 @@ input[type="email"], input[type="password"] {
     justify-content: flex-end;
 }
 
-/* --- Modal Overlay & Container (Existing/Completed) --- */
-.modal-overlay {
+
+/* ============================================================== */
+/* --- WEEK 7: MODAL STYLES (Re-factored to match HTML/JS) --- */
+/* ============================================================== */
+
+/* The Modal (background) - Using .modal class now */
+.modal {
     position: fixed;
-    top: 0;
+    z-index: 1000;
     left: 0;
+    top: 0;
     width: 100%;
     height: 100%;
+    overflow: auto;
     background-color: rgba(0, 0, 0, 0.7); 
     display: flex;
-    justify-content: center;
     align-items: center;
-    z-index: 1000;
-    opacity: 0; 
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
-.modal-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
+/* Modal Content/Box */
 .modal-content {
-    background: var(--color-white);
+    background-color: var(--color-white);
+    margin: auto;
     padding: 30px;
     border-radius: 12px;
     width: 90%;
     max-width: 500px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     position: relative;
-    transform: translateY(-50px);
-    transition: transform 0.3s ease;
+    animation: fadeIn 0.3s ease-out;
 }
 
-.modal-overlay.active .modal-content {
-    transform: translateY(0);
-}
-
+/* Close Button */
 .close-btn {
     position: absolute;
     top: 10px;
     right: 15px;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
+    color: var(--color-text-secondary);
+    font-size: 28px;
+    font-weight: bold;
     cursor: pointer;
-    color: var(--color-text-secondary);
+    line-height: 1;
+    transition: color 0.2s;
 }
 
-.modal-title {
-    color: var(--color-primary);
-    margin-bottom: 10px;
+.close-btn:hover,
+.close-btn:focus {
+    color: var(--color-error);
+    text-decoration: none;
+    cursor: pointer;
 }
 
-.modal-description {
-    color: var(--color-text-secondary);
-    margin-bottom: 20px;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.modal-actions {
+/* ============================================================== */
+/* --- PLANT PROFILE STYLES (plant-profile.html) --- */
+/* ============================================================== */
+
+/* Override .header for the profile page to align buttons correctly */
+.header-profile {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    border-bottom: 1px solid var(--color-background-medium);
 }
-
-.image-preview-area {
-    margin: 20px 0;
-    border: 2px dashed var(--color-border);
-    border-radius: 8px;
+.header-profile h1 {
+    flex-grow: 1; 
     text-align: center;
-    overflow: hidden;
-    max-height: 200px; 
+}
+
+/* New: Container for the Edit/Delete buttons */
+.header-actions {
     display: flex;
-    justify-content: center;
+    gap: 10px;
     align-items: center;
 }
 
-.preview-img {
-    max-width: 100%;
-    height: auto;
-    display: block;
+.back-btn {
+    font-size: 1rem;
+    padding: 8px 15px;
 }
-
-.feedback-area {
-    min-height: 20px;
-    color: var(--color-accent);
-    font-weight: bold;
-    text-align: center;
-}
-
-/* --- Plant Profile Header/Layout (plant-profile.html) --- */
 
 .plant-profile-main {
     max-width: 1000px;
@@ -304,24 +478,7 @@ input[type="email"], input[type="password"] {
     padding: 0 20px;
 }
 
-/* Override .header for the profile page to align buttons correctly */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 30px;
-    border-bottom: 1px solid var(--color-background-medium);
-}
-.header h1 {
-    flex-grow: 1; /* Allows the title to take available space */
-    text-align: center;
-}
-.back-btn {
-    font-size: 1rem;
-    padding: 8px 15px;
-}
-
-/* --- Main Plant Details Section --- */
+/* --- Main Plant Details Section (WEEK 6/7) --- */
 .plant-details-container {
     padding: 20px 0;
 }
@@ -357,60 +514,315 @@ input[type="email"], input[type="password"] {
     white-space: pre-wrap;
 }
 
-/* --- Supplemental Data Section --- */
-.supplemental-data-container {
+/* --- Supplemental Data Section (WEEK 6) - No changes needed here --- */
+
+
+/* ============================================================== */
+/* --- WEEK 7: TAB STYLES (Reminders & Photos) --- */
+/* ============================================================== */
+
+.tab-management-container {
     margin-top: 40px;
-    padding: 25px;
-    background-color: var(--color-background-medium);
-    border-radius: 12px;
 }
 
-.supplemental-data-container h2 {
-    color: var(--color-accent);
+.tabs-nav {
+    display: flex;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--color-text-secondary);
+    transition: color 0.2s;
+    position: relative;
+    top: 2px; /* Pull it down to align with the border */
+}
+
+.tab-button.active {
+    color: var(--color-primary);
+    border-bottom: 3px solid var(--color-primary);
+    margin-bottom: -2px; 
+}
+
+.tab-button span {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    font-weight: normal;
+    margin-left: 5px;
+}
+
+.tab-button.active span {
+    color: var(--color-primary);
+}
+
+.tab-content {
+    background-color: var(--color-white);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.tab-header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
     border-bottom: 1px dashed var(--color-border);
     padding-bottom: 10px;
 }
-
-.supplemental-info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+.tab-header-actions h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--color-text-dark);
 }
 
-.supplemental-info-grid p {
-    background-color: var(--color-white);
-    padding: 10px 15px;
+/* ============================================================== */
+/* --- WEEK 7: REMINDERS LIST STYLES --- */
+/* ============================================================== */
+
+.list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.reminder-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
     border-radius: 6px;
-    border: 1px solid #eee;
+    border: 1px solid var(--color-background-medium);
+    transition: box-shadow 0.2s;
 }
 
-.trefle-source {
-    margin-top: 20px;
-    font-size: 0.85rem;
+.reminder-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.reminder-item-scheduled {
+    background-color: #f7f7f7;
+    border-left: 5px solid var(--color-info);
+}
+
+.reminder-item-due {
+    background-color: #fff0f0; /* Light error color */
+    border: 1px solid var(--color-critical);
+    border-left: 5px solid var(--color-critical);
+    animation: pulseBorder 1s infinite alternate; /* Subtle warning */
+}
+
+@keyframes pulseBorder {
+    from { border-color: var(--color-critical); }
+    to { border-color: rgba(194, 14, 14, 0.5); }
+}
+
+.frequency-label {
+    font-size: 0.9rem;
     color: var(--color-text-secondary);
-    text-align: right;
+    font-weight: normal;
 }
 
-/* --- Responsive Adjustments --- */
+.reminder-dates {
+    flex-grow: 1;
+    margin: 0 20px;
+}
+
+.reminder-dates p {
+    margin: 5px 0;
+    font-size: 0.95rem;
+}
+
+.due-date-danger {
+    color: var(--color-critical);
+    font-weight: bold;
+}
+.due-date-normal {
+    color: var(--color-success);
+    font-weight: bold;
+}
+
+.reminder-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ============================================================== */
+/* --- WEEK 7: GROWTH PHOTO GRID STYLES --- */
+/* ============================================================== */
+
+.photo-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    padding-top: 10px;
+}
+
+.photo-item {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-color: var(--color-background-light);
+    transition: transform 0.2s;
+}
+
+.photo-item:hover {
+    transform: translateY(-3px);
+}
+
+.photo-item img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-date {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--color-primary);
+    text-align: center;
+    padding: 5px 10px 0;
+    margin: 0;
+}
+
+.photo-notes {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    padding: 0 10px 10px;
+    margin: 2px 0 0;
+}
+
+/* ============================================================== */
+/* --- WEEK 8: MOBILE RESPONSIVENESS (Refinements & Navigation) --- */
+/* ============================================================== */
+
+/* --- Mobile Navigation Styles (Hidden by Default) --- */
+.nav-toggle-icon {
+    display: none; /* Hidden on desktop */
+    font-size: 30px;
+    cursor: pointer;
+    z-index: 10;
+    color: var(--color-primary);
+}
+
+.nav-toggle-icon:before {
+    content: '\2630'; /* Hamburger Unicode symbol */
+}
+
+/* If the checkbox is checked, change the icon to 'X' */
+#nav-toggle:checked ~ .nav-toggle-icon:before {
+    content: '\2715'; /* 'X' symbol */
+}
+
+@media (max-width: 900px) {
+    /* Collapse dashboard grid on smaller screens */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .dashboard-plants-section {
+        grid-column: 1 / 2;
+    }
+    .dashboard-tasks-section h2, .dashboard-plants-section h2 {
+        /* Align section headers to the left for better flow on a single column */
+        text-align: left;
+    }
+}
+
 @media (max-width: 768px) {
+    /* --- Header & Mobile Nav Implementation --- */
+    
     .header {
-        flex-wrap: wrap;
-        justify-content: center;
+        /* Isolate logo/title and hamburger icon */
+        padding: 15px 20px;
+        position: relative;
     }
-    .header h1 {
-        order: -1; /* Move title to the top on small screens */
+
+    /* Hide desktop nav and show mobile toggle button */
+    .main-nav {
+        display: none; 
+        position: absolute;
+        top: 100%; /* Position below the header */
+        left: 0;
         width: 100%;
-        margin-bottom: 15px;
+        background-color: var(--color-white);
+        border-top: 1px solid var(--color-background-medium);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        z-index: 9;
     }
+
+    .nav-toggle-icon {
+        display: block; /* Show hamburger icon */
+    }
+
+    /* Mobile Nav Activation */
+    #nav-toggle:checked ~ .main-nav {
+        display: block;
+    }
+
+    .main-nav ul {
+        flex-direction: column;
+        padding: 10px 0;
+        gap: 0;
+    }
+    
+    .main-nav li {
+        border-bottom: 1px solid var(--color-background-medium);
+    }
+
+    .main-nav a {
+        display: block;
+        padding: 15px 20px;
+    }
+    
+    /* --- General Layout Refinements --- */
     .dashboard-main, .plant-profile-main {
         padding: 0 10px;
     }
+
+    /* Adjust Plant Profile for Mobile */
     .main-profile-content {
         flex-direction: column;
         gap: 20px;
+        padding: 15px;
     }
     .plant-profile-image {
         max-width: 100%;
+        height: auto;
+    }
+
+    /* Adjust Reminder & Task Styles for better vertical flow */
+    .task-item, .reminder-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px;
+    }
+    .task-actions, .reminder-actions {
+        width: 100%;
+        display: flex;
+        justify-content: space-around; /* Spread buttons out */
+        margin-top: 5px;
+    }
+    .reminder-dates {
+        margin: 0;
+        padding-left: 0;
+    }
+    .reminder-dates p {
+        margin: 2px 0;
+    }
+
+    /* Tab bar scrolling fix */
+    .tabs-nav {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 5px; /* Space for the scrollbar on some devices */
     }
 }
