@@ -4,7 +4,7 @@
 const TREFLE_API_KEY = "usr-TnSpnNZlQT1fiW_iU8ZiIAapv8ahpNyviHq3mNhtJUY";
 const TREFLE_BASE_URL = 'https://trefle.io/api/v1';
 
-const PLANT_ID_API_KEY = "zSgKfhaCNKcue5jLxywkXJZN4ie0oBd96JhtU7wrANYqfR07gw";
+const PLANT_ID_API_KEY = "0ptmeSF8skJRbvHGhhxMYiKznRtOqWZHvHFXivdcj19uLJTP87";
 const PLANT_ID_URL = 'https://api.plant.id/v2/identify';
 
 
