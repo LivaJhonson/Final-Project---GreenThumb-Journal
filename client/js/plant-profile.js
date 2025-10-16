@@ -1,5 +1,9 @@
 // client/js/plant-profile.js
 
+// --- IMPORT THE EXTERNAL API HANDLER ---
+import { getTreflePlantDetails } from './external-services.mjs'; 
+// NOTE: external-services.mjs must contain the getTreflePlantDetails function and the Trefle API key.
+
 // --- DOM Elements ---
 const plantProfileName = document.getElementById('plant-profile-name');
 const plantDetailsSection = document.getElementById('plant-details-section');
@@ -39,7 +43,8 @@ const addPhotoMessage = document.getElementById('photo-message'); // Corrected t
 
 let currentPlantId = null; // Store the ID globally
 let currentScientificName = null; // Store the scientific name for Trefle lookup
-
+// ADDED Trefle ID placeholder. This is where your Plant.ID result should store the Trefle ID.
+let currentTrefleId = null; 
 
 // --- UTILITY FUNCTIONS ---
 
@@ -114,6 +119,8 @@ const fetchPlantDetails = async (plantId) => {
             tabsContainer.classList.remove('hidden'); // Show tabs
             
             currentScientificName = plant.scientific_name;
+            currentTrefleId = plant.trefle_id; // ASSUME: Your plant schema saves the Trefle ID
+            
             renderMainDetails(plant);
 
             // Populate Edit Modal fields
@@ -123,7 +130,7 @@ const fetchPlantDetails = async (plantId) => {
             document.getElementById('edit-notes').value = plant.notes || '';
             
             // Fetch related data
-            fetchSupplementalData(plant.scientific_name);
+            fetchSupplementalData(plant.trefle_id); // CHANGED: Fetch using Trefle ID
             fetchPlantReminders();
             fetchGrowthPhotos();
             
@@ -182,56 +189,68 @@ const renderMainDetails = (plant) => {
 };
 
 
-// --- 4. Fetch Supplemental Data (GET /api/plant-details/:scientific_name) ---
-const fetchSupplementalData = async (scientificName) => {
+// --- 4. Fetch Supplemental Data (USING TREFLE API DIRECTLY - Outcome 6) ---
+const fetchSupplementalData = async (trefleId) => {
     supplementalDataSection.classList.remove('hidden');
     
     // Clear previous supplemental data or loading message
     supplementalDataSection.innerHTML = '<h2>Supplemental Details</h2><p id="supplemental-loading-message" class="loading-message">Fetching external data...</p>';
     const supLoadingMessage = document.getElementById('supplemental-loading-message');
     
-    if (!scientificName) {
-        supLoadingMessage.textContent = 'No scientific name available to fetch supplemental data.';
+    if (!trefleId) {
+        supLoadingMessage.textContent = 'No Trefle ID available to fetch supplemental data.';
         return;
     }
 
-    const authToken = localStorage.getItem('authToken');
-
     try {
-        const response = await fetch(`/api/plant-details/${encodeURIComponent(scientificName)}`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-        });
+        // CALL EXTERNAL API DIRECTLY (Two API requirement met)
+        const trefleData = await getTreflePlantDetails(trefleId);
 
-        const data = await response.json();
         supLoadingMessage.classList.add('hidden');
 
-        if (response.ok && data.data && data.data.length > 0) {
-            renderSupplementalData(data.data[0]);
+        if (trefleData) {
+            renderSupplementalData(trefleData);
         } else {
             supplementalDataSection.innerHTML = '<h2>Supplemental Details</h2><p class="placeholder-text">No supplemental data found from Trefle.</p>';
         }
     } catch (error) {
-        console.error('Error fetching supplemental data:', error);
-        supplementalDataSection.innerHTML = '<h2>Supplemental Details</h2><p class="error-message">Error loading external supplemental data.</p>';
+        console.error('Error fetching supplemental data from Trefle:', error);
+        supplementalDataSection.innerHTML = '<h2>Supplemental Details</h2><p class="error-message">Error loading external supplemental data from Trefle.</p>';
     }
 };
 
-// --- 5. Render Supplemental Data ---
+// --- 5. Render Supplemental Data (Adapted for Trefle API response) ---
 const renderSupplementalData = (trefleData) => {
-    const details = trefleData.main_species;
-    if (!details) {
-        supplementalDataSection.innerHTML = '<h2>Supplemental Details</h2><p class="placeholder-text">Supplemental data structure invalid or empty.</p>';
-        return;
-    }
+    // Trefle API response is nested. We check for 'main_species' details
+    const details = trefleData.main_species || {}; 
+
+    // Helper to safely access nested attributes, defaulting to 'N/A'
+    const getValue = (obj, path) => {
+        const parts = path.split('.');
+        let current = obj;
+        for (const part of parts) {
+            current = current ? current[part] : undefined;
+        }
+        return current || 'N/A';
+    };
 
     let html = `
         <div class="supplemental-info-grid">
-            <p><strong>Family:</strong> ${details.family_common_name || 'N/A'}</p>
-            <p><strong>Duration:</strong> ${details.duration || 'N/A'}</p>
-            <p><strong>Native Status:</strong> ${trefleData.native_status || 'N/A'}</p>
-            <p><strong>Growth Habit:</strong> ${details.growth_habit || 'N/A'}</p>
-            <p><strong>Toxicity:</strong> ${details.toxicity || 'N/A'}</p>
-            <p><strong>Min Temp:</strong> ${details.minimum_temperature ? `${details.minimum_temperature.deg_f} °F` : 'N/A'}</p>
+            <p><strong>Family:</strong> ${getValue(details, 'family_common_name')}</p>
+            <p><strong>Duration:</strong> ${getValue(details, 'duration')}</p>
+            <p><strong>Native Status:</strong> ${getValue(trefleData, 'native_status')}</p>
+            <p><strong>Growth Habit:</strong> ${getValue(details, 'growth_habit')}</p>
+            <p><strong>Toxicity:</strong> ${getValue(details, 'toxicity')}</p>
+            <p><strong>Min Temp:</strong> ${getValue(details, 'minimum_temperature.deg_f') ? `${getValue(details, 'minimum_temperature.deg_f')} °F` : 'N/A'}</p>
+        </div>
+        
+        <div class="common-names-list">
+            <h4>Common Names</h4>
+            <ul>
+                ${trefleData.common_names && Array.isArray(trefleData.common_names) ? 
+                    trefleData.common_names.map(name => `<li>${name}</li>`).join('') : 
+                    '<li>No common names listed.</li>'}
+            </ul>
         </div>
         <p class="trefle-source">Data courtesy of Trefle.io</p>
     `;
@@ -243,6 +262,7 @@ const renderSupplementalData = (trefleData) => {
 // ----------------------------------------------------------------------
 // --- WEEK 8: DISEASE DIAGNOSIS FUNCTIONS ---
 // ----------------------------------------------------------------------
+// NOTE: These functions remain UNCHANGED as they rely on your local /api/plant-diagnosis mock.
 
 /**
  * Fetches the disease diagnosis results for the current plant.
@@ -351,7 +371,10 @@ const handleEditPlant = async (event) => {
             // If scientific name changed, refresh supplemental data
             if (currentScientificName !== data.scientific_name) {
                 currentScientificName = data.scientific_name;
-                fetchSupplementalData(currentScientificName);
+                // If you had a way to map the scientific name to a Trefle ID, 
+                // you would call fetchSupplementalData(newTrefleId) here.
+                // For simplicity, we just reload the whole page to force a fresh fetch
+                // window.location.reload(); 
             }
 
             setTimeout(() => {
@@ -407,6 +430,7 @@ const deleteCurrentPlant = async () => {
 // --- WEEK 7: REMINDER FUNCTIONS (CRUD) ---
 // ----------------------------------------------------------------------
 
+// ... (Reminder functions remain UNCHANGED) ...
 /**
  * Fetches and renders all reminders for the current plant. (Read All)
  */
@@ -635,6 +659,7 @@ const handleDeleteReminder = async (event) => {
 // --- WEEK 7: PHOTO FUNCTIONS (Growth Photo Upload) ---
 // ----------------------------------------------------------------------
 
+// ... (Photo functions remain UNCHANGED) ...
 /**
  * Fetches and renders all growth photos for the current plant. (Read All)
  */
@@ -802,39 +827,29 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- General Action Buttons ---
     if (deletePlantTopBtn) deletePlantTopBtn.addEventListener('click', deleteCurrentPlant);
-    
-    // WEEK 8: Diagnosis Button
     if (diagnosePlantBtn) diagnosePlantBtn.addEventListener('click', fetchDiagnosisData);
-
-    // --- Modal Open Buttons ---
     if (editPlantBtn) editPlantBtn.addEventListener('click', () => openModal(editPlantModal));
-    if (addReminderBtn) {
-        addReminderBtn.addEventListener('click', () => {
-            setTodayDate(); // Set default date before opening
-            openModal(setReminderModal);
-        });
-    }
-    // 🎉 THIS IS THE MISSING LISTENER FOR THE ADD PHOTO BUTTON 🎉
-    if (addPhotoBtn) addPhotoBtn.addEventListener('click', () => openModal(addPhotoModal)); 
-
-    // --- Modal Close Listeners (Using Delegation) ---
-    document.querySelectorAll('.close-btn').forEach(closeBtn => {
-        closeBtn.addEventListener('click', (e) => {
-            const modalId = e.target.dataset.modalId;
-            const modalElement = document.getElementById(modalId);
-            
-            // Map the modal ID to its corresponding message element for clearing
-            let messageElement = null;
-            if (modalId === 'edit-plant-modal') messageElement = editPlantMessage;
-            if (modalId === 'set-reminder-modal') messageElement = setReminderMessage;
-            if (modalId === 'add-photo-modal') messageElement = addPhotoMessage;
-            
-            closeModal(modalElement, messageElement);
-        });
+    
+    // --- Modal Control Buttons ---
+    document.querySelectorAll('.close-btn').forEach(btn => {
+        const modalId = btn.dataset.modalId;
+        if (modalId) {
+            const modal = document.getElementById(modalId);
+            const message = document.getElementById(modalId.replace('-modal', '-message'));
+            btn.addEventListener('click', () => closeModal(modal, message));
+        }
     });
 
-    // --- Form Submission Handlers ---
+    // --- Tab-specific Modals ---
+    if (addReminderBtn) addReminderBtn.addEventListener('click', () => {
+        setTodayDate();
+        openModal(setReminderModal);
+    });
+    if (addPhotoBtn) addPhotoBtn.addEventListener('click', () => openModal(addPhotoModal));
+    
+    // --- Form Submissions ---
     if (editPlantForm) editPlantForm.addEventListener('submit', handleEditPlant);
     if (setReminderForm) setReminderForm.addEventListener('submit', handleSetReminder);
     if (addPhotoForm) addPhotoForm.addEventListener('submit', handleAddPhoto);
+
 });
