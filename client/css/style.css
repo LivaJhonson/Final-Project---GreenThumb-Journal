@@ -2,11 +2,11 @@
     /* Color Palette (GreenThumb Identity) */
     --color-primary: #38761D; /* Forest Green */
     --color-secondary: #C9D86D; /* Moss Green */ 
-    --color-accent: #2986CC; 	/* Used for success/links/feedback (a nice blue/green contrast) */
+    --color-accent: #1c5c8c; 	/* Used for success/links/feedback (a nice blue/green contrast) */
     --color-background-light: #F5F5F5; 
     --color-background-medium: #EAEAEA;
     --color-text-dark: #333333;
-    --color-text-secondary: #666666;
+    --color-text-secondary: #585858;
     --color-error: #C20E0E;
     --color-border: #CCCCCC;
     --color-white: #FFFFFF;
