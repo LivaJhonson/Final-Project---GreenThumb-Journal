@@ -1,24 +1,18 @@
 [build]
-# CRITICAL: This MUST match the name of your frontend folder.
 publish = "client"
-# If your client is a simple HTML/CSS/JS site, this is fine.
-# If it uses a build tool (like Vite/React), replace this with the build command.
-command = "echo 'No build step required'" 
+command = "echo 'No client build required'" 
 
 [functions]
-# CRITICAL: Path to your functions folder.
 directory = "netlify/functions"
-# Use esbuild for faster and more reliable deployment of ES Modules.
 node_bundler = "esbuild"
 
-# CRITICAL FIX: Add the :splat placeholder to correctly route all API paths.
+# CRITICAL: Fixes the 404/502 errors by passing the full path to the function
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/server/:splat" # <-- FIXED
+  to = "/.netlify/functions/server/:splat" 
   status = 200
-  force = true # Ensures the redirect applies even if a static file matches the path
+  force = true
 
-# CRITICAL: Redirects the root URL to your login page.
 [[redirects]]
   from = "/"
   to = "/login.html"
