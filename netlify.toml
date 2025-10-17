@@ -1,18 +1,22 @@
 [build]
-  # CRITICAL: This MUST match the name of your frontend folder.
-  publish = "client"
-  command = "echo 'No build step required'"
+# CRITICAL: This MUST match the name of your frontend folder.
+publish = "client"
+# If your client is a simple HTML/CSS/JS site, this is fine.
+# If it uses a build tool (like Vite/React), replace this with the build command.
+command = "echo 'No build step required'" 
 
 [functions]
-  # CRITICAL: Path to your functions folder.
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
+# CRITICAL: Path to your functions folder.
+directory = "netlify/functions"
+# Use esbuild for faster and more reliable deployment of ES Modules.
+node_bundler = "esbuild"
 
-# CRITICAL: Redirects all /api/ calls to your serverless function.
+# CRITICAL FIX: Add the :splat placeholder to correctly route all API paths.
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/server" 
+  to = "/.netlify/functions/server/:splat" # <-- FIXED
   status = 200
+  force = true # Ensures the redirect applies even if a static file matches the path
 
 # CRITICAL: Redirects the root URL to your login page.
 [[redirects]]
