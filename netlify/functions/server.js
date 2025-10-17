@@ -2,39 +2,38 @@ import express from 'express';
 import serverless from 'serverless-http'; 
 import bcrypt from 'bcrypt'; 
 import jwt from 'jsonwebtoken';
-import fetch from 'node-fetch';
-import 'dotenv/config'; 
+import fetch from 'node-fetch'; // Keep if using Node < 18 or if Netlify environment requires it.
+// Removed: import 'dotenv/config'; 
+
+// CRITICAL FIX: Add CORS 
+import cors from 'cors'; 
+
 import { dbPromise } from './database.js';
 
 // --- DATABASE CONNECTION SETUP (CRITICAL FIX FOR SERVERLESS) ---
 let db;
 // Use an IIFE (Immediately Invoked Function Expression) to establish 
 // the database connection synchronously for all routes before the handler is created.
-// This is the most reliable pattern for serverless Express.
 await (async () => {
     try {
         db = await dbPromise;
         console.log("Database connection established successfully.");
     } catch (err) {
         console.error("Critical: Database connection failed during server startup.", err);
-        // In a function environment, we can't stop the process, but the error is logged.
     }
 })();
 
 // --- DATE CALCULATION UTILITY (WEEK 7) ---
-
-/**
- * Calculates the next due date using SQLite's datetime functions.
- * @param {string} lastCompletedDate - The last date the task was completed (YYYY-MM-DD).
- * @param {number} frequencyDays - The interval in days (e.g., 7).
- * @returns {string} SQLite function string to calculate the date.
- */
 function calculateNextDueDateSQL(lastCompletedDate, frequencyDays) {
     return `strftime('%Y-%m-%d', '${lastCompletedDate}', '+${frequencyDays} day')`;
 }
 
 
 const app = express();
+
+// FIX: Add CORS middleware to allow the client (Netlify frontend) to talk to the API (Netlify function)
+app.use(cors({ origin: '*' })); 
+
 app.use(express.json()); 
 
 
@@ -47,6 +46,7 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({ message: "Access denied. No token provided." });
     }
 
+    // NOTE: process.env.JWT_SECRET must be set in Netlify Environment Variables!
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) {
             console.error("JWT Verification Failed:", err.message); 
@@ -71,7 +71,6 @@ app.post('/api/register', async (req, res) => {
         return res.status(400).json({ message: "Email is required and password must be at least 6 characters." });
     }
 
-    // Check for db readiness before attempting query
     if (!db) { return res.status(500).json({ message: "Database connection failed to initialize." }); }
 
     try {
