@@ -1,20 +1,20 @@
 [build]
-  # CRITICAL: This MUST match the name of your frontend folder.
-  publish = "client"
-  command = "echo 'No build step required'"
+publish = "client"
+command = "echo 'No client build required'" 
 
 [functions]
-  # CRITICAL: Path to your functions folder.
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
+directory = "netlify/functions"
+node_bundler = "esbuild"
 
-# CRITICAL: Redirects all /api/ calls to your serverless function.
+# CRITICAL: This rule captures the /api/ prefix PLUS the rest of the path 
+# (like /register or /login) and sends it to the serverless function.
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/server" 
+  to = "/.netlify/functions/server/:splat"  # 'server' matches your server.mjs filename
   status = 200
+  force = true
 
-# CRITICAL: Redirects the root URL to your login page.
+# This ensures users hitting the root URL go to the login page.
 [[redirects]]
   from = "/"
   to = "/login.html"
