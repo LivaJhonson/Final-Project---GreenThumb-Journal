@@ -8,7 +8,7 @@ import fetch from 'node-fetch'; // Keep if using Node < 18 or if Netlify environ
 // CRITICAL FIX: Add CORS 
 import cors from 'cors'; 
 
-import { dbPromise } from './database.js';
+import { dbPromise } from './database.mjs';
 
 // --- DATABASE CONNECTION SETUP (CRITICAL FIX FOR SERVERLESS) ---
 let db;
