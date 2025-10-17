@@ -3,17 +3,26 @@
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 
-// CRITICAL FIX: Use :memory: to prevent I/O errors on Netlify's read-only filesystem.
+// --- CRITICAL FOR NETLIFY: USE IN-MEMORY DATABASE ---
+// The :memory: setting ensures the database runs in RAM, which is required
+// because Netlify Functions cannot use the local file system for storage.
 const dbFile = ':memory:'; 
 
+// Variable to hold the database connection object once it's open
+let db;
+
+/**
+ * Initializes the database connection and creates all necessary tables.
+ */
 async function setupDatabase() {
     try {
-        const db = await open({ 
-            filename: dbFile,
+        // Assign the opened database to the 'db' variable
+        db = await open({ 
+            filename: dbFile, // Uses :memory:
             driver: sqlite3.Database
         });
 
-        // 1. Create the 'users' Table
+        // 1. Create the 'users' Table 
         await db.exec(`
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,13 +31,54 @@ async function setupDatabase() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
-        // ... include all your other CREATE TABLE statements here (plants, reminders, photos)
-        await db.exec(`
-            CREATE TABLE IF NOT EXISTS plants (...);
-        `);
-        // ... and so on
+        console.log("Database initialized: 'users' table is ready.");
 
-        console.log("Database initialized successfully.");
+        // 2. Create the 'plants' Table 
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS plants (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,      
+                name TEXT NOT NULL,
+                scientific_name TEXT,
+                common_name TEXT,
+                image_url TEXT,
+                notes TEXT,
+                identification_data TEXT, 
+                trefle_id TEXT,             
+                date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+            );
+        `);
+        console.log("Database initialized: 'plants' table is ready.");
+
+        // 3. Create the 'reminders' Table
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS reminders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                plant_id INTEGER NOT NULL,
+                type TEXT NOT NULL, 
+                frequency_days INTEGER NOT NULL,
+                last_completed DATE DEFAULT (strftime('%Y-%m-%d', 'now')),
+                next_due DATE,
+                FOREIGN KEY (plant_id) REFERENCES plants(id) ON DELETE CASCADE
+            );
+        `);
+        console.log("Database initialized: 'reminders' table is ready.");
+
+        // 4. Create the 'growth_photos' Table
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS growth_photos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                plant_id INTEGER NOT NULL,
+                image_url TEXT NOT NULL,
+                date_taken TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                notes TEXT,
+                FOREIGN KEY (plant_id) REFERENCES plants(id) ON DELETE CASCADE
+            );
+        `);
+        console.log("Database initialized: 'growth_photos' table is ready.");
+
+        // Return the ready-to-use db connection object
         return db;
     } catch (error) {
         console.error("Failed to set up database:", error);
@@ -36,5 +86,5 @@ async function setupDatabase() {
     }
 }
 
-// Export the database promise
+// Export the database promise so server.mjs can await it
 export const dbPromise = setupDatabase();
