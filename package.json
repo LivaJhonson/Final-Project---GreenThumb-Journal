@@ -1,0 +1,24 @@
+{
+  "name": "final-project---greenthumb-journal",
+  "version": "1.0.0",
+  "description": "Plant identification and management application.",
+  "type": "module", 
+  "main": "server/local-server.js",
+  "scripts": {
+    "start": "node server/local-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {s
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2", 
+    "node-fetch": "^2.7.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  }
+}

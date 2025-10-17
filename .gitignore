@@ -1,0 +1,11 @@
+# Dependencies
+/node_modules
+
+# Environment Variables (CRITICAL for secrets)
+.env
+
+# Database file
+*.db
+/server/*.sqlite
+# Local Netlify folder
+.netlify

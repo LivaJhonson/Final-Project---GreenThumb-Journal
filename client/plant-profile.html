@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="plant-page-title">Plant Profile</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+    <header class="header">
+        <button id="back-to-dashboard" class="btn btn-tertiary back-btn">
+            &larr; Back to Dashboard
+        </button>
+        <h1 id="plant-profile-name">Loading Plant Details...</h1>
+        <div class="header-actions">
+            <button id="diagnose-plant-btn" class="btn btn-secondary diagnose-btn" aria-label="Run Disease Diagnosis">
+                <i class="fas fa-microscope"></i> Diagnose Plant
+            </button> 
+            <button id="delete-plant-button" class="btn btn-danger" aria-label="Delete Plant">Delete Plant</button>
+        </div>
+    </header>
+
+    <main class="plant-profile-main">
+        <p class="loading-text">Fetching plant data...</p>
+
+        <section id="plant-details-container" class="plant-details-container hidden">
+            <div class="main-visual">
+                <img id="plant-image" src="placeholder.jpg" alt="Plant Image">
+            </div>
+            
+            <div id="general-info" class="general-info-section">
+                </div>
+        </section>
+
+        <section id="supplemental-details" class="supplemental-data-container"></section>
+        
+        <hr>
+
+        <section class="tab-management-container">
+            
+            <div class="tabs-nav">
+                <button class="tab-button active" data-tab="reminders-content">Reminders <span id="reminder-count"></span></button>
+                <button class="tab-button" data-tab="growth-photos-content">Growth Photos <span id="photo-count"></span></button>
+            </div>
+
+            <div id="reminders-content" class="tab-content"> 
+                <div class="tab-header-actions">
+                    <h3>Scheduled Care Tasks</h3>
+                    <button id="add-reminder-button" class="btn btn-secondary">
+                        + Add Reminder
+                    </button>
+                </div>
+                <div id="reminders-list" class="list-container">
+                    <p class="placeholder-text hidden" id="no-reminders-message">No reminders set for this plant yet.</p>
+                </div>
+            </div>
+
+            <div id="growth-photos-content" class="tab-content hidden">
+                <div class="tab-header-actions">
+                    <h3>Growth Timeline</h3>
+                    <button id="add-photo-button" class="btn btn-secondary">
+                        + Add Photo
+                    </button>
+                </div>
+                <div id="photos-grid" class="photo-grid-container">
+                    <p class="placeholder-text hidden" id="no-photos-message">No growth photos added yet.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+
+    <div id="care-reminder-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn close-reminder-modal">&times;</span> 
+            <h2>Set Care Reminder</h2>
+            <form id="reminder-form">
+                <label for="task-type">Task Type:</label>
+                <select id="task-type" name="type" required>
+                    <option value="Watering">Watering</option>
+                    <option value="Fertilizing">Fertilizing</option>
+                    <option value="Repotting">Repotting</option>
+                    <option value="Pruning">Pruning</option>
+                    <option value="Check for Pests">Check for Pests</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label for="frequency-days">Frequency (Days):</label>
+                <input type="number" id="frequency-days" name="frequency_days" min="1" value="7" required>
+
+                <label for="last-completed-date">Last Completed Date:</label>
+                <input type="date" id="last-completed-date" name="last_completed" required>
+
+                <button type="submit" class="btn btn-primary">Set Reminder</button>
+                <p id="reminder-message" class="modal-message"></p> 
+            </form>
+        </div>
+    </div>
+
+    <div id="add-photo-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn close-photo-modal">&times;</span> 
+            <h2>Add Growth Photo</h2>
+            <form id="add-photo-form"> 
+                
+                <img id="photo-preview" src="placeholder.jpg" alt="Photo Preview" class="photo-preview-box">
+                
+                <label for="photo-upload-input" class="file-upload-label">
+                    Upload Image File
+                </label>
+                <input type="file" id="photo-upload-input" name="image_file" accept="image/*" required style="display:none;">
+
+                <label for="photo-notes">Notes (Optional):</label>
+                <textarea id="photo-notes" name="notes" rows="3"></textarea>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-camera"></i> Save Photo
+                </button>
+                <p id="photo-message" class="modal-message"></p> 
+            </form>
+        </div>
+    </div>
+
+    <script src="js/plant-profile.js"></script>
+</body>
+</html>
