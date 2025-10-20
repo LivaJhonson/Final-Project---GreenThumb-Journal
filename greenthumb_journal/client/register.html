@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | GreenThumb Journal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="form-container">
+        <h2>Create Account 🪴</h2>
+        <form id="register-form">
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" required>
+            </div>
+            <div>
+                <label for="password">Password (min 6 chars):</label>
+                <input type="password" id="password" required minlength="6">
+            </div>
+            <div>
+                <label for="confirm-password">Confirm Password:</label>
+                <input type="password" id="confirm-password" required minlength="6">
+            </div>
+            <button type="submit">Register Account</button>
+            <p id="message" class="form-message"></p>
+        </form>
+        <p class="small-link">Already have an account? <a href="login.html">Login here</a></p>
+    </div>
+    
+    <script type="module" src="js/register.js"></script> 
+</body>
+</html>

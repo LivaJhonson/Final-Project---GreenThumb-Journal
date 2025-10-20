@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Detail | GreenThumb Journal</title>
+    <link rel="stylesheet" href="css/style.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <h1>GreenThumb Journal</h1>
+            <nav id="main-nav">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="#" id="logout-btn">Logout</a>
+            </nav>
+            <button class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="plant-header">
+            <button id="edit-plant-btn" class="btn btn-secondary">Edit Details</button>
+            <button id="delete-plant-btn" class="btn btn-danger">Delete Plant</button>
+        </section>
+
+        <section id="plant-details" class="card-grid">
+            <div id="plant-info" class="card">
+                <h2>Details</h2>
+                </div>
+            
+            <div id="disease-diagnosis" class="card hidden">
+                <h2>Disease Diagnosis</h2>
+                </div>
+        </section>
+
+        <section id="reminders-section" class="section-full">
+            <h2>Care Schedule 🗓️</h2>
+            <button id="set-reminder-btn" class="btn btn-primary">Set New Reminder</button>
+            <div id="reminders-list" class="task-list">
+                </div>
+        </section>
+
+        <section id="photos-section" class="section-full">
+            <h2>Growth Photos 📸</h2>
+            <button id="upload-photo-btn" class="btn btn-secondary">Upload New Photo</button>
+            <div id="photo-gallery" class="photo-grid">
+                </div>
+        </section>
+    </main>
+
+    <div id="reminder-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Set Reminder</h3>
+            <form id="reminder-form">
+                <label for="reminder-type">Task:</label>
+                <select id="reminder-type" name="type" required>
+                    <option value="water">Water</option>
+                    <option value="feed">Feed</option>
+                    <option value="prune">Prune</option>
+                </select>
+                
+                <label for="frequency-days">Frequency (Days):</label>
+                <input type="number" id="frequency-days" name="frequency_days" min="1" required>
+                
+                <button type="submit" class="btn btn-primary">Save Reminder</button>
+                <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="photo-upload-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Upload Photo</h3>
+            <form id="photo-upload-form">
+                <label for="image-url">Image URL:</label>
+                <input type="url" id="image-url" name="image_url" required placeholder="Paste link to hosted image (Imgur, etc.)">
+
+                <label for="photo-notes">Notes:</label>
+                <textarea id="photo-notes" name="notes"></textarea>
+
+                <button type="submit" class="btn btn-primary">Save Photo</button>
+                <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/plant-detail.js"></script>
+    <script src="js/auth.js"></script> </body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenThumb Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <header class="header">
+        <input type="checkbox" id="nav-toggle" class="hidden" aria-label="Toggle Mobile Navigation Menu">
+        
+        <label for="nav-toggle" class="nav-toggle-icon"></label>
+
+        <h1>GreenThumb</h1>
+
+        <nav class="main-nav">
+            <ul>
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="#"><i class="fas fa-seedling"></i> Plant Library</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            </ul>
+        </nav>
+        
+        <button id="logout-btn" class="btn btn-tertiary">Logout</button>
+    </header>
+
+    <main class="dashboard-main">
+        
+        <div class="dashboard-grid">
+            
+            <section id="tasks-section" class="dashboard-tasks-section">
+                <h2>Today's Tasks 🗓️</h2>
+                
+                <div id="today-tasks-list" class="task-list">
+                    <div class="placeholder-text">No tasks scheduled for today! You're all caught up.</div>
+                </div>
+                
+                <button class="btn btn-link btn-small" style="margin-top: 10px;">View All Reminders</button>
+            </section>
+
+            <section class="dashboard-plants-section">
+                
+                <button id="open-identify-modal-btn" class="btn btn-primary add-plant-btn">
+                    <i class="fas fa-leaf"></i> Add New Plant / Identify
+                </button>
+                
+                <h2>My Plant Collection 🌱</h2>
+
+                <div id="my-plants-container" class="plant-cards-grid">
+                    <div class="placeholder-text">
+                        Your collection is empty! Click "Add New Plant / Identify" to get started.
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div id="identify-modal" class="modal hidden"> <div class="modal-content">
+            <span id="close-identify-modal-btn" class="close-btn">&times;</span> <h3 class="modal-title">Identify Your Plant</h3>
+            <p class="modal-description">Upload a clear photo of the leaf or flower for the best results.</p>
+            
+            <form id="identify-form" class="plant-identify-form">
+                
+                <input type="file" id="plant-image-input" accept="image/*" style="display: none;" aria-label="Plant Image Upload File Selector">
+                
+                <button type="button" id="upload-button" class="btn btn-secondary">
+                    <i class="fas fa-camera"></i> Upload Photo
+                </button>
+
+                <div id="image-preview-container" class="image-preview-area hidden">
+                    <img id="image-preview" src="#" alt="Image Preview" class="preview-img">
+                </div>
+
+                <div id="feedback-area" class="feedback-area"></div>
+
+                <div class="modal-actions">
+                    <button type="submit" id="identify-submit-btn" class="btn btn-primary" disabled>
+                        Identify Plant
+                    </button>
+                    <button type="button" id="cancel-identify-btn" class="btn btn-tertiary">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+
+            <div id="identification-results" class="identification-results hidden">
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/identify-plant.js"></script>
+    <script type="module" src="js/tasks.mjs"></script>
+    <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>

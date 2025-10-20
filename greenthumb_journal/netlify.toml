@@ -1,0 +1,24 @@
+# netlify.toml
+
+[build]
+  # 1. Tells Netlify that your frontend files are in the 'client' folder.
+  publish = "client"
+  command = "echo 'No build step required'" # Optional build command
+
+[functions]
+  # 2. Tells Netlify that the serverless code is in this folder.
+  directory = "netlify/functions"
+  # Necessary for using ES module syntax (import/export) in the functions.
+  node_bundler = "esbuild"
+
+# 3. The magic redirect: routes all /api/ calls to your serverless function.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/server" 
+  status = 200
+
+# 4. Redirects the root URL to your login page.
+[[redirects]]
+  from = "/"
+  to = "/login.html"
+  status = 302

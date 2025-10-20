@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="plant-page-title">Plant Profile</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="header">
+        <button onclick="window.location.href='dashboard.html'" class="btn btn-tertiary back-btn">
+            &larr; Back to Dashboard
+        </button>
+        <h1 id="plant-profile-name">Loading Plant Details...</h1>
+        <div class="header-actions">
+            <button id="diagnose-plant-btn" class="btn btn-secondary diagnose-btn" aria-label="Run Disease Diagnosis">
+                <i class="fas fa-microscope"></i> Diagnose Plant
+            </button> 
+            <button id="edit-plant-btn" class="btn btn-primary" aria-label="Edit Plant Details">Edit</button>
+            <button id="delete-plant-top-btn" class="btn btn-danger" aria-label="Delete Plant">Delete Plant</button>
+        </div>
+    </header>
+
+    <main class="plant-profile-main">
+        <p id="loading-message" class="loading-full-page">Fetching plant data...</p>
+
+        <section id="plant-details-section" class="plant-details-container hidden">
+        </section>
+        
+        <section id="diagnosis-results-section" class="supplemental-data-container hidden">
+            <h2>Disease Diagnosis Results</h2>
+            <p id="diagnosis-loading-message" class="loading-message hidden"></p>
+        </section>
+
+        <section id="supplemental-data-section" class="supplemental-data-container hidden">
+            <h2>Supplemental Details</h2>
+        </section>
+
+        <section class="tab-management-container hidden" id="tabs-container">
+            
+            <div class="tabs-nav">
+                <button class="tab-button active" data-tab="reminders">Reminders <span id="reminder-count"></span></button>
+                <button class="tab-button" data-tab="photos">Growth Photos <span id="photo-count"></span></button>
+            </div>
+
+            <div id="reminders-tab-content" class="tab-content active">
+                <div class="tab-header-actions">
+                    <h3>Scheduled Care Tasks</h3>
+                    <button id="add-reminder-btn" class="btn btn-secondary">
+                        + Add Reminder
+                    </button>
+                </div>
+                <div id="reminders-list" class="list-container">
+                    <p class="placeholder-text hidden" id="no-reminders-message">No reminders set for this plant yet.</p>
+                </div>
+            </div>
+
+            <div id="photos-tab-content" class="tab-content hidden">
+                <div class="tab-header-actions">
+                    <h3>Growth Timeline</h3>
+                    <button id="add-photo-btn" class="btn btn-secondary">
+                        + Add Photo
+                    </button>
+                </div>
+                <div id="photos-grid" class="photo-grid-container">
+                    <p class="placeholder-text hidden" id="no-photos-message">No growth photos added yet.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+
+    <div id="edit-plant-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" data-modal-id="edit-plant-modal">&times;</span>
+            <h2>Edit Plant Details</h2>
+            <form id="edit-plant-form">
+                <label for="edit-name">Plant Nickname:</label>
+                <input type="text" id="edit-name" name="name" required>
+
+                <label for="edit-scientific-name">Scientific Name (Optional):</label>
+                <input type="text" id="edit-scientific-name" name="scientific_name">
+                
+                <label for="edit-common-name">Common Name (Optional):</label>
+                <input type="text" id="edit-common-name" name="common_name">
+
+                <label for="edit-notes">Notes:</label>
+                <textarea id="edit-notes" name="notes" rows="4"></textarea>
+
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <p id="edit-plant-message" class="form-message"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="set-reminder-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" data-modal-id="set-reminder-modal">&times;</span>
+            <h2>Set Care Reminder</h2>
+            <form id="set-reminder-form">
+                <label for="reminder-type">Task Type:</label>
+                <select id="reminder-type" name="type" required>
+                    <option value="Watering">Watering</option>
+                    <option value="Fertilizing">Fertilizing</option>
+                    <option value="Repotting">Repotting</option>
+                    <option value="Pruning">Pruning</option>
+                    <option value="Check for Pests">Check for Pests</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label for="reminder-frequency">Frequency (Days):</label>
+                <input type="number" id="reminder-frequency" name="frequency_days" min="1" value="7" required>
+
+                <label for="last-completed">Last Completed Date:</label>
+                <input type="date" id="last-completed" name="last_completed" required>
+
+                <button type="submit" class="btn btn-primary">Set Reminder</button>
+                <p id="set-reminder-message" class="form-message"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-photo-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" data-modal-id="add-photo-modal">&times;</span>
+            <h2>Add Growth Photo</h2>
+            <form id="upload-photo-form">
+                <label for="photo-url">Image URL:</label>
+                <input type="url" id="photo-url" name="photo_url" placeholder="e.g., https://example.com/photo.jpg" required>
+
+                <label for="photo-caption">Caption (Optional):</label>
+                <textarea id="photo-caption" name="caption" rows="3"></textarea>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-camera"></i> Save Photo
+                </button>
+                <p id="photo-message" class="form-message"></p>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/plant-profile.js"></script>
+</body>
+</html>
